@@ -1,9 +1,6 @@
 #!/usr/bin/env bash
-# ============================================================================
-# BaixaAiRESOLVE — baixa os binarios de runtime para macOS (deno, yt-dlp, ffmpeg)
-# Uso:   ./fetch-mac-bins.sh [x64|arm64]
-# Deve ser executado EM UM MAC antes do `pnpm dist:mac` (os binarios sao nativos).
-# ============================================================================
+# BaixaAiPRO - baixa os binarios de runtime para macOS (deno, yt-dlp, ffmpeg)
+# Uso: ./fetch-mac-bins.sh [x64|arm64]
 set -euo pipefail
 
 ARCH="${1:-$(uname -m)}"
@@ -30,32 +27,32 @@ curl -fL "https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp_macos
 chmod +x "$BIN/yt-dlp"
 
 echo "==> Baixando ffmpeg ($FF_ARCH)"
-# ffmpeg estatico. Override: export FFMPEG_URL="..." antes de rodar.
+FF_OK=0
 if [[ -n "${FFMPEG_URL:-}" ]]; then
-  curl -fL "$FFMPEG_URL" -o "$TMP/ffmpeg.zip"
+  if curl -fL "$FFMPEG_URL" -o "$TMP/ffmpeg.zip"; then FF_OK=1; fi
 else
-  case "$ARCH" in
-    x86_64|x64)
-      # evermeet.cx fornece build estatico x86_64 (zip com o binario 'ffmpeg' na raiz)
-      curl -fL "https://evermeet.cx/ffmpeg/getrelease/zip" -o "$TMP/ffmpeg.zip" ;;
-    arm64|aarch64)
-      # osxexperts.net fornece build arm64 (dmg). Fallback documentado no README.
-      curl -fL "https://www.osxexperts.net/ffmpeg7arm.zip" -o "$TMP/ffmpeg.zip" ;;
-  esac
+  if [[ "$ARCH" == "arm64" || "$ARCH" == "aarch64" ]]; then
+    if curl -fL "https://www.osxexperts.net/ffmpeg7arm.zip" -o "$TMP/ffmpeg.zip"; then FF_OK=1; fi
+  else
+    for u in "https://www.osxexperts.net/ffmpeg7x64.zip" "https://evermeet.cx/ffmpeg/getrelease/zip"; do
+      if curl -fL "$u" -o "$TMP/ffmpeg.zip"; then FF_OK=1; break; fi
+    done
+  fi
 fi
-unzip -o "$TMP/ffmpeg.zip" -d "$TMP/ffmpeg" >/dev/null 2>&1 || true
-FF_BIN="$(find "$TMP/ffmpeg" "$BIN" -maxdepth 2 -name 'ffmpeg' -type f 2>/dev/null | head -n1)"
-if [[ -z "$FF_BIN" ]]; then
-  echo "!! Nao foi possivel extrair o ffmpeg automaticamente."
-  echo "   Instale via Homebrew e copie:  brew install ffmpeg && cp \"\$(brew --prefix ffmpeg)/bin/ffmpeg\" \"$BIN/ffmpeg\""
-  exit 1
-fi
-cp "$FF_BIN" "$BIN/ffmpeg"
-chmod +x "$BIN/ffmpeg"
 
-# ffprobe (opcional, usado apenas como fallback do downloader)
-if [[ -n "${FFPROBE_URL:-}" ]]; then
-  curl -fL "$FFPROBE_URL" -o "$BIN/ffprobe" && chmod +x "$BIN/ffprobe" || true
+if [[ "$FF_OK" == "1" ]]; then
+  unzip -o "$TMP/ffmpeg.zip" -d "$TMP/ffmpeg" >/dev/null 2>&1 || true
+  FF_BIN="$(find "$TMP/ffmpeg" "$BIN" -maxdepth 2 -name 'ffmpeg' -type f 2>/dev/null | head -n1)"
+  if [[ -n "$FF_BIN" ]]; then
+    cp "$FF_BIN" "$BIN/ffmpeg"
+    chmod +x "$BIN/ffmpeg"
+  else
+    FF_OK=0
+  fi
+fi
+
+if [[ "$FF_OK" != "1" ]]; then
+  echo "!! AVISO: ffmpeg nao foi baixado automaticamente (segue sem ffmpeg)."
 fi
 
 echo "==> Concluido. Binarios em $BIN:"

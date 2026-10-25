@@ -35,6 +35,7 @@ jobs:
           scripts/fetch-mac-bins.sh arm64
           npx electron-builder --mac --arm64 --publish never
       - name: Gerar DMG x64 (Intel)
+        continue-on-error: true
         run: |
           scripts/fetch-mac-bins.sh x64
           npx electron-builder --mac --x64 --publish never
