@@ -1,0 +1,64 @@
+{
+  "name": "baixaiapro",
+  "version": "1.1.0",
+  "description": "BaixaAiPRO — baixe videos e musicas e reconheca o que estiver tocando no computador",
+  "main": "main.js",
+  "author": "BaixaAiPRO",
+  "license": "MIT",
+  "scripts": {
+    "start": "electron .",
+    "dist:win": "electron-builder --win --x64",
+    "dist:mac": "electron-builder --mac --x64 --arm64",
+    "dist": "electron-builder"
+  },
+  "devDependencies": {
+    "electron": "^33.2.0",
+    "electron-builder": "^25.1.8"
+  },
+  "build": {
+    "appId": "com.baixaai.pro",
+    "productName": "BaixaAiPRO",
+    "asar": true,
+    "directories": {
+      "output": "dist",
+      "buildResources": "build"
+    },
+    "files": [
+      "main.js",
+      "preload.js",
+      "renderer/**/*",
+      "package.json"
+    ],
+    "extraResources": [
+      { "from": "engine", "to": "engine" },
+      { "from": "bridge", "to": "bridge" },
+      { "from": "bin", "to": "bin" }
+    ],
+    "win": {
+      "target": [
+        { "target": "nsis", "arch": ["x64"] }
+      ],
+      "icon": "build/icon.ico"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "BaixaAiPRO",
+      "artifactName": "${productName}-Setup-${version}.${ext}"
+    },
+    "mac": {
+      "target": [
+        { "target": "dmg", "arch": ["x64", "arm64"] }
+      ],
+      "icon": "build/icon.png",
+      "category": "public.app-category.video",
+      "artifactName": "${productName}-${version}-${arch}.${ext}"
+    },
+    "dmg": {
+      "title": "BaixaAiPRO ${version}",
+      "artifactName": "${productName}-${version}-${arch}.${ext}"
+    }
+  }
+}

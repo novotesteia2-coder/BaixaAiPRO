@@ -1,0 +1,44 @@
+name: build
+
+on:
+  workflow_dispatch:
+
+jobs:
+  windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: npm install
+      - name: Baixar binarios Windows
+        shell: pwsh
+        run: .\scripts\fetch-win-bins.ps1
+      - run: npx electron-builder --win --x64
+      - uses: actions/upload-artifact@v4
+        with:
+          name: BaixaAiPRO-Windows
+          path: dist/*.exe
+
+  macos:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: npm install
+      - name: Gerar DMG arm64 (Apple Silicon)
+        run: |
+          chmod +x scripts/fetch-mac-bins.sh
+          scripts/fetch-mac-bins.sh arm64
+          npx electron-builder --mac --arm64
+      - name: Gerar DMG x64 (Intel)
+        run: |
+          scripts/fetch-mac-bins.sh x64
+          npx electron-builder --mac --x64
+      - uses: actions/upload-artifact@v4
+        with:
+          name: BaixaAiPRO-macOS
+          path: dist/*.dmg
