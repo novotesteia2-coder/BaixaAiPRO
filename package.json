@@ -1,7 +1,7 @@
 {
   "name": "baixaiapro",
-  "version": "1.1.0",
-  "description": "BaixaAiPRO — baixe videos e musicas e reconheca o que estiver tocando no computador",
+  "version": "1.1.1",
+  "description": "BaixaAiPRO - baixe videos e musicas e reconheca o que estiver tocando no computador",
   "main": "main.js",
   "author": "BaixaAiPRO",
   "license": "MIT",

@@ -15,7 +15,7 @@ jobs:
       - name: Baixar binarios Windows
         shell: pwsh
         run: .\scripts\fetch-win-bins.ps1
-      - run: npx electron-builder --win --x64
+      - run: npx electron-builder --win --x64 --publish never
       - uses: actions/upload-artifact@v4
         with:
           name: BaixaAiPRO-Windows
@@ -33,11 +33,11 @@ jobs:
         run: |
           chmod +x scripts/fetch-mac-bins.sh
           scripts/fetch-mac-bins.sh arm64
-          npx electron-builder --mac --arm64
+          npx electron-builder --mac --arm64 --publish never
       - name: Gerar DMG x64 (Intel)
         run: |
           scripts/fetch-mac-bins.sh x64
-          npx electron-builder --mac --x64
+          npx electron-builder --mac --x64 --publish never
       - uses: actions/upload-artifact@v4
         with:
           name: BaixaAiPRO-macOS

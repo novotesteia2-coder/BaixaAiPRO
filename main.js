@@ -1,6 +1,6 @@
 'use strict';
 
-const { app, BrowserWindow, ipcMain, dialog, shell } = require('electron');
+const { app, BrowserWindow, ipcMain, dialog, shell, desktopCapturer } = require('electron');
 const path = require('path');
 const fs = require('fs');
 const os = require('os');
@@ -253,6 +253,16 @@ async function captureSystemAudio(seconds) {
 function registerIpc() {
   ipcMain.handle('resolve-call', (_e, payload) => resolveCall(payload.action, payload.params));
   ipcMain.handle('capture-audio', (_e, seconds) => captureSystemAudio(seconds));
+  ipcMain.handle('save-audio', (_e, buffer) => {
+    try {
+      ensureTmp();
+      const f = path.join(tmpDir(), 'capture_' + Date.now() + '.webm');
+      fs.writeFileSync(f, Buffer.from(buffer));
+      return { ok: true, filePath: f };
+    } catch (err) {
+      return { ok: false, error: String(err) };
+    }
+  });
 
   ipcMain.handle('open-folder', (_e, folder) => {
     try {
@@ -345,6 +355,16 @@ function createWindow() {
   });
 
   mainWindow.loadFile(path.join(__dirname, 'renderer', 'index.html'));
+
+  // Captura do audio do sistema (loopback nativo do Chromium; sem drivers).
+  mainWindow.webContents.session.setDisplayMediaRequestHandler(async (request, callback) => {
+    try {
+      const sources = await desktopCapturer.getSources({ types: ['screen'] });
+      callback({ video: sources[0], audio: 'loopback' });
+    } catch (_) {
+      callback({});
+    }
+  }, { useSystemPicker: false });
 
   // Smoke test (dev): BAIXAAI_SMOKE=1 executa um autoteste e encerra.
   if (process.env.BAIXAAI_SMOKE === '1') {

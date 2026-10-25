@@ -8,6 +8,7 @@ contextBridge.exposeInMainWorld('api', {
   // Ponte do DaVinci Resolve (opcional) e captura do audio do computador
   resolveCall: (action, params) => ipcRenderer.invoke('resolve-call', { action, params }),
   captureSystemAudio: (seconds) => ipcRenderer.invoke('capture-audio', seconds),
+  saveAudio: (buffer) => ipcRenderer.invoke('save-audio', buffer),
 
   // Pastas / arquivos
   openFolder: (folder) => ipcRenderer.invoke('open-folder', folder),

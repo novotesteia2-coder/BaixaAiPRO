@@ -763,16 +763,44 @@ function definirEstadoEscuta(ativo, titulo, sub) {
   }
 }
 
+async function capturarAudioComputador(seconds) {
+  // Loopback nativo do Chromium/Electron: captura o que toca no PC sem drivers.
+  const stream = await navigator.mediaDevices.getDisplayMedia({ video: true, audio: true });
+  const audioTracks = stream.getAudioTracks();
+  if (!audioTracks || audioTracks.length === 0) {
+    stream.getTracks().forEach((t) => t.stop());
+    throw new Error('Nenhuma faixa de audio foi capturada.');
+  }
+  const audioStream = new MediaStream(audioTracks);
+  stream.getVideoTracks().forEach((t) => t.stop());
+
+  const rec = new MediaRecorder(audioStream, { mimeType: 'audio/webm' });
+  const chunks = [];
+  rec.ondataavailable = (e) => { if (e.data && e.data.size > 0) chunks.push(e.data); };
+  rec.start();
+  await new Promise((r) => setTimeout(r, seconds * 1000));
+  await new Promise((r) => { rec.onstop = r; rec.stop(); });
+  audioTracks.forEach((t) => t.stop());
+
+  const blob = new Blob(chunks, { type: 'audio/webm' });
+  const buf = new Uint8Array(await blob.arrayBuffer());
+  const res = await window.api.saveAudio(buf);
+  if (!res || !res.ok) throw new Error((res && res.error) || 'falha ao salvar a captura');
+  return { filePath: res.filePath, seconds };
+}
+
 btnRecListen.addEventListener('click', async () => {
   if (isRecListening) return;
   pararPreviewAudio();
   mostrarErroReconhecimento('');
   definirEstadoEscuta(true, 'Ouvindo o \u00e1udio do computador...', 'Capturando o que est\u00e1 tocando agora (navegador, player, etc.)...');
 
-  const cap = await window.api.captureSystemAudio(12);
-  if (!cap || cap.status !== 'OK') {
+  let cap;
+  try {
+    cap = await capturarAudioComputador(12);
+  } catch (e) {
     definirEstadoEscuta(false);
-    mostrarErroReconhecimento((cap && cap.message) || 'N\u00e3o consegui capturar o \u00e1udio do computador.');
+    mostrarErroReconhecimento('N\u00e3o consegui capturar o \u00e1udio do computador: ' + (e && e.message ? e.message : e));
     return;
   }
 
@@ -789,7 +817,7 @@ btnRecListen.addEventListener('click', async () => {
     }],
   };
 
-  definirEstadoEscuta(true, 'Ouvindo: ' + (cap.device || '\u00e1udio do computador'), 'Reconhecendo m\u00fasica e buscando link oficial no YouTube...');
+  definirEstadoEscuta(true, 'Ouvindo o \u00e1udio do computador', 'Reconhecendo m\u00fasica e buscando link oficial no YouTube...');
   await executarMotorReconhecimento(dados);
 });
 
