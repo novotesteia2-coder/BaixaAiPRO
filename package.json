@@ -57,7 +57,7 @@
       "artifactName": "${productName}-${version}-${arch}.${ext}"
     },
     "dmg": {
-      "title": "BaixaAiPRO ${version}",
+      "background": null,
       "artifactName": "${productName}-${version}-${arch}.${ext}"
     }
   }
